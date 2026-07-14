@@ -1,0 +1,53 @@
+---
+title: "Seren Devlog #2 — Building a Welsh Street in Blender"
+date: "2026-07-10"
+game: "Seren"
+excerpt: "How I'm using Blender to build the background scenes for Seren's world — starting with a Welsh terraced street, Meshy AI for props, and the MCP Blender plugin for lighting."
+tags: ["devlog", "Blender", "3D", "visual novel", "Seren"]
+featured: false
+---
+
+The world of Seren is built from specific places. Not fantasy geography, not generic medievalism, but recognisable South Welsh texture: terraced houses, grey stone, the particular quality of light that comes through valley hills in early morning.
+
+For the visual novel backgrounds, I am building these scenes in Blender and rendering them as 2D images that slot into the game engine. This devlog documents that pipeline.
+
+## The Scene: Risca Terrace
+
+The first major background scene is a Welsh terraced street — the kind you find throughout the South Wales valleys. Two rows of houses facing each other across a narrow road, brick and render, bay windows, front steps that meet the pavement directly with no front gardens.
+
+The challenge is getting the specificity right. There is a visual vocabulary here — the chimney stacks, the particular window proportions, the greenery that pushes through where it can — that communicates *this place, this history* rather than a generic "old street."
+
+## Meshy AI for Props
+
+I've been using [Meshy AI](https://www.meshy.ai/) to generate props that would take too long to model from scratch: post boxes, gate posts, a particular style of lamp, smaller details that add life to the scene.
+
+The workflow:
+1. Describe the prop with as much specificity as possible (period, regional style, material, condition)
+2. Generate multiple variants, pick the one closest to the target
+3. Clean up in Blender — retopology where needed, UV adjustment, texture refinement
+4. Place in scene
+
+The outputs from Meshy are not final. They are starting points that save time on base geometry. The refinement step is where they become specific rather than generic.
+
+## MCP Blender Plugin for Lighting
+
+This is the part I find most interesting. I have been using the [MCP Blender plugin](https://github.com/ahujasid/blender-mcp) to direct lighting and scene adjustments through conversation — essentially describing what I want and having the plugin make the adjustments.
+
+For this scene:
+- A low morning sun raking across the street from the left, long shadows
+- A soft ambient fill from an overcast sky — bright but diffuse, the kind of grey-white Welsh morning light
+- A hint of warm interior light in one window, suggesting someone is already awake
+
+The MCP workflow is useful for iteration. Describing the emotional quality of the lighting — *Welsh autumn morning, cool and still, the smell of coal smoke still in the air from yesterday* — and having that translated into actual scene settings is a faster way to reach the right atmosphere than adjusting values by hand.
+
+## Rendering for 2D
+
+The render settings are tuned for the output format: backgrounds for a visual novel display at high horizontal resolution, wide aspect ratio, with specific areas that need to be uncluttered for character sprites and dialogue boxes.
+
+I'm rendering with Cycles for quality, with a moderate sample count that balances render time against noise. Post-processing in Blender's compositor adds a subtle desaturation and a slight vignette that matches the game's visual tone.
+
+## What's Coming
+
+The next scene is an interior — Seren's room in the house she has returned to. Smaller, more intimate, heavy with the weight of what is not there. That will require a different approach to lighting and a different emotional register.
+
+Documentation to follow.

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Crimson_Pro } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/layout/Nav";
-import { Footer } from "@/components/layout/Footer";
 import { MusicPlayerProvider } from "@/lib/music-context";
 import { PlayerBar } from "@/components/music/PlayerBar";
 
@@ -50,7 +49,7 @@ export default function RootLayout({
         <MusicPlayerProvider>
           <Nav />
           <main className="flex-1">{children}</main>
-          <Footer />
+
           <PlayerBar />
         </MusicPlayerProvider>
       </body>

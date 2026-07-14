@@ -3,16 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-const NAV_LINKS = [
+type NavChild = { href: string; label: string };
+type NavItem =
+  | { href: string; label: string; children?: undefined }
+  | { href: string; label: string; children: NavChild[] };
+
+const NAV_LINKS: NavItem[] = [
   { href: "/", label: "Home" },
   { href: "/music", label: "Music" },
   { href: "/blog", label: "Blog" },
   { href: "/books", label: "Books" },
   { href: "/games", label: "Games" },
+  {
+    href: "/resources",
+    label: "Resources",
+    children: [{ href: "/garden-of-memory", label: "Garden of Memory" }],
+  },
   { href: "/about", label: "About" },
 ];
 
@@ -45,6 +55,48 @@ function NavLink({
   );
 }
 
+function DropdownNavItem({ item }: { item: NavItem & { children: NavChild[] } }) {
+  const pathname = usePathname();
+  const isActive =
+    pathname.startsWith(item.href) ||
+    item.children.some((c) => pathname.startsWith(c.href));
+
+  return (
+    <div className="relative group">
+      <div className="flex items-center gap-0.5">
+        <NavLink href={item.href} label={item.label} />
+        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors mt-px" />
+      </div>
+      {/* Dropdown */}
+      <div
+        className={cn(
+          "absolute top-full left-1/2 -translate-x-1/2 mt-3 w-44 rounded-md border border-border bg-background/95 backdrop-blur-sm shadow-lg",
+          "opacity-0 invisible translate-y-1",
+          "group-hover:opacity-100 group-hover:visible group-hover:translate-y-0",
+          "transition-all duration-200"
+        )}
+      >
+        <div className="py-1">
+          {item.children.map((child) => (
+            <Link
+              key={child.href}
+              href={child.href}
+              className={cn(
+                "block px-4 py-2 text-sm transition-colors",
+                pathname.startsWith(child.href)
+                  ? "text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+            >
+              {child.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Nav() {
   const [open, setOpen] = useState(false);
 
@@ -62,9 +114,13 @@ export function Nav() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8">
-          {NAV_LINKS.map((link) => (
-            <NavLink key={link.href} {...link} />
-          ))}
+          {NAV_LINKS.map((link) =>
+            link.children ? (
+              <DropdownNavItem key={link.href} item={link as NavItem & { children: NavChild[] }} />
+            ) : (
+              <NavLink key={link.href} href={link.href} label={link.label} />
+            )
+          )}
         </nav>
 
         {/* Mobile hamburger */}
@@ -90,16 +146,38 @@ export function Nav() {
               <p className="mb-4 font-serif text-xs uppercase tracking-widest text-muted-foreground px-3">
                 Navigation
               </p>
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center rounded-md px-3 py-3 text-base font-medium text-foreground hover:bg-muted hover:text-primary transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {NAV_LINKS.map((link) =>
+                link.children ? (
+                  <div key={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center rounded-md px-3 py-3 text-base font-medium text-foreground hover:bg-muted hover:text-primary transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                    {link.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center rounded-md pl-7 pr-3 py-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-primary transition-colors"
+                      >
+                        ↳ {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center rounded-md px-3 py-3 text-base font-medium text-foreground hover:bg-muted hover:text-primary transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                )
+              )}
               <div className="mt-6 border-t border-border pt-6 flex gap-4 px-3">
                 <a
                   href="https://soundcloud.com/dancingsalamanders"
