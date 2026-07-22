@@ -2,6 +2,9 @@
 
 > *Illuminating Hope Through Connection*
 
+> 🗺️ **Roadmap:** [`todo/overview_todo.md`](todo/overview_todo.md) — current status
+> per phase and what's next.
+
 A fully self-hosted, locally developed website for Dancing Salamanders — the music, writing, and creative world of an indie folk artist whose work weaves together themes of hope, grief, belonging, and the Celtic landscapes of Wales and beyond.
 
 ---
