@@ -9,11 +9,13 @@ export interface PostFrontmatter {
   tags?: string[];
   featured?: boolean;
   coverImage?: string;
+  svContentPath?: string; // relative path from content/blog/ to a Swedish .md source
 }
 
 export interface Post extends PostFrontmatter {
   slug: string;
   content: string;
+  svContent?: string; // Swedish body text loaded from svContentPath
   readingTime: number; // minutes
 }
 
@@ -52,9 +54,22 @@ export function getPostBySlug(slug: string): Post | null {
 
   const raw = fs.readFileSync(filePath, "utf-8");
   const { data, content } = matter(raw);
+
+  // Load Swedish translation if referenced
+  let svContent: string | undefined;
+  if (typeof data.svContentPath === "string") {
+    const svPath = path.join(BLOG_DIR, data.svContentPath);
+    if (fs.existsSync(svPath)) {
+      const svRaw = fs.readFileSync(svPath, "utf-8");
+      // Strip the leading # Title line (the Swedish files use a plain # heading as title)
+      svContent = svRaw.replace(/^#[^\n]*\n+/, "").trim();
+    }
+  }
+
   return {
     slug,
     content,
+    svContent,
     readingTime: estimateReadingTime(content),
     ...(data as PostFrontmatter),
   };

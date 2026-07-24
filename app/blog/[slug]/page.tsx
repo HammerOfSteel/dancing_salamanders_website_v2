@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { LanguageToggle } from "@/components/blog/LanguageToggle";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { Calendar, Clock, ArrowLeft, ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
@@ -69,7 +70,9 @@ export default async function BlogPostPage({ params }: Props) {
 
       {/* Content */}
       <article className="mx-auto max-w-3xl px-4 sm:px-6 py-12 prose-ds">
-        <MDXRemote source={post.content} />
+        <LanguageToggle svSlot={post.svContent ? <MDXRemote source={post.svContent} /> : undefined}>
+          <MDXRemote source={post.content} />
+        </LanguageToggle>
       </article>
 
       <Separator className="bg-border max-w-3xl mx-auto" />
