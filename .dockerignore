@@ -1,0 +1,24 @@
+# ── Development artifacts ──────────────────────────────────────────────
+node_modules
+.next
+.git
+.gitignore
+
+# ── Large binary media — never needed at build time, volume-mounted at runtime
+# Excluding these drops the build context by ~3.5 GB.
+# NOTE: public/images and public/music directory/JSON structure must stay
+#       because lib/novels.ts (existsSync) and lib/music.ts (readdirSync) read
+#       them during `npm run build`. Only the heavy binary blobs are excluded.
+public/manga
+public/audiobooks
+# Strip the actual audio from music/ — keep directory stubs and JSON metadata
+public/music/**/*.mp3
+public/music/**/*.flac
+public/music/**/*.wav
+public/music/**/*.ogg
+public/music/**/*.m4a
+
+# ── Misc ───────────────────────────────────────────────────────────────
+.env*.local
+.env.production
+deploy/

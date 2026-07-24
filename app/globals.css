@@ -790,3 +790,27 @@
   color: #c9a84c;
   border-color: rgba(201, 168, 76, 0.35);
 }
+
+/* ─── Hero Visualizer ───────────────────────────────────────────────── */
+
+/* Staggered bar bounce for the loading shimmer */
+@keyframes viz-bar-bounce {
+  0%, 100% { transform: scaleY(0.4); opacity: 0.5; }
+  50%       { transform: scaleY(1);   opacity: 1;   }
+}
+
+.hero-visualizer-root .viz-loading-bar {
+  animation: viz-bar-bounce 0.9s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+/* Toggle button pulse ring when visualizer is active */
+@keyframes viz-toggle-ring {
+  0%   { box-shadow: 0 0 0 0   rgba(139, 92, 246, 0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(139, 92, 246, 0);   }
+  100% { box-shadow: 0 0 0 0   rgba(139, 92, 246, 0);   }
+}
+
+.hero-viz-toggle[data-active="true"] {
+  animation: viz-toggle-ring 2s ease-out infinite;
+}

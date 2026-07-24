@@ -1,18 +1,11 @@
-import Link from "next/link";
 import Image from "next/image";
-import { PageHero } from "@/components/shared/PageHero";
+import { HeroVisualizer } from "@/components/shared/HeroVisualizer";
 import { FadeInView } from "@/components/shared/FadeInView";
 
 export default function HomePage() {
   return (
     <div className="pb-24">
-      <PageHero
-        title="Dancing Salamanders"
-        subtitle="Echoes of Hope, Harmonies of Heart"
-        size="full"
-        align="center"
-        backgroundImage="/images/hero/landing_top_bg.png"
-      />
+      <HeroVisualizer />
 
       {/* Mission — image left, text right */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6 py-28 sm:py-36">

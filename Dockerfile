@@ -15,6 +15,9 @@ COPY . .
 
 # Music files are mounted as a volume at runtime — don't bake them in
 ENV NEXT_TELEMETRY_DISABLED=1
+# Visualizer URL is injected per-environment via docker-compose build args
+ARG NEXT_PUBLIC_VISUALIZER_URL
+ENV NEXT_PUBLIC_VISUALIZER_URL=$NEXT_PUBLIC_VISUALIZER_URL
 RUN npm run build
 
 # ── runner ────────────────────────────────────────────────────────────────
