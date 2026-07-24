@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+*~
 
 # debug
 npm-debug.log*
@@ -53,3 +54,6 @@ public/manga/**/*.webp
 content/books/manga/**/*.png
 content/books/manga/**/*.jpg
 content/books/manga/**/*.webp
+content/books/novels/**/*.mp3
+content/books/novels/**/*.wav
+public/audiobooks/**/*.mp3

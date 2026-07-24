@@ -8,6 +8,8 @@ export interface NovelMeta {
   collection: string;
   collectionSlug: string;
   excerpt?: string;
+  coverImage?: string;
+  audiobookSrc?: string;
   wordCount: number;
   pageCount: number;
 }
@@ -71,6 +73,17 @@ function loadNovel(
   const pages = splitIntoPages(content);
   const wordCount = countWords(content);
 
+  // Check for cover image in public/images/books/novels/[slug]/
+  const coverExts = ["cover.webp", "cover.jpg", "cover.png"];
+  const publicCoverDir = path.join(process.cwd(), "public", "images", "books", "novels", slug);
+  const foundCover = coverExts.find((f) =>
+    fs.existsSync(path.join(publicCoverDir, f))
+  );
+
+  // Check for audiobook in public/audiobooks/novels/[slug]/
+  const audiobookPath = path.join(process.cwd(), "public", "audiobooks", "novels", slug, "audiobook.mp3");
+  const hasAudiobook = fs.existsSync(audiobookPath);
+
   const meta: NovelMeta = {
     slug,
     title: typeof rawMeta.title === "string" ? rawMeta.title : slugToTitle(slug),
@@ -78,6 +91,8 @@ function loadNovel(
     collection: typeof rawMeta.collection === "string" ? rawMeta.collection : slugToTitle(collectionSlug),
     collectionSlug,
     excerpt: typeof rawMeta.excerpt === "string" ? rawMeta.excerpt : undefined,
+    coverImage: foundCover ? `/images/books/novels/${slug}/${foundCover}` : undefined,
+    audiobookSrc: hasAudiobook ? `/audiobooks/novels/${slug}/audiobook.mp3` : undefined,
     wordCount,
     pageCount: pages.length,
   };

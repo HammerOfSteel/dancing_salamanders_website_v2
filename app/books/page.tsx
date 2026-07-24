@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PageHero } from "@/components/shared/PageHero";
 import { FadeInView } from "@/components/shared/FadeInView";
 import { getAllNovels, type NovelMeta } from "@/lib/novels";
@@ -21,6 +22,22 @@ function NovelCard({ novel, index }: { novel: NovelMeta; index: number }) {
         className="group flex flex-col h-full rounded-2xl border border-border bg-card hover:border-primary/40 hover:-translate-y-1 transition-all duration-300 hover:shadow-xl hover:shadow-primary/8 overflow-hidden"
       >
         <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        {novel.coverImage ? (
+          <div className="relative w-full aspect-[2/3] overflow-hidden">
+            <Image
+              src={novel.coverImage}
+              alt={`Cover of ${novel.title}`}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-card/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </div>
+        ) : (
+          <div className="w-full aspect-[2/3] bg-muted/30 flex items-center justify-center">
+            <span className="font-serif text-4xl text-muted-foreground/30">✦</span>
+          </div>
+        )}
         <div className="flex flex-col flex-1 p-5 sm:p-6">
           <span className="inline-block text-[10px] tracking-widest uppercase text-muted-foreground mb-3 font-sans">
             {novel.collection}

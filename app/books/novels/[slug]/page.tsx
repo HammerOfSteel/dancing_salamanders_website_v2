@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getAllNovels, getNovelBySlug } from "@/lib/novels";
+import { AudiobookPlayer } from "@/components/books/AudiobookPlayer";
+import { NovelProgressClient } from "@/components/books/NovelProgressClient";
+import { PageJumper } from "@/components/books/PageJumper";
 import type { Metadata } from "next";
 
 interface Props {
@@ -51,6 +54,9 @@ export default async function NovelReaderPage({ params, searchParams }: Props) {
         <span className="grimoire-collection">{meta.collection}</span>
       </div>
 
+      {/* Continue reading banner (client — reads localStorage) */}
+      <NovelProgressClient slug={slug} currentPage={currentPage} totalPages={totalPages} />
+
       {/* Page wrapper */}
       <div className="grimoire-page">
         {/* Title block — only on page 1 */}
@@ -76,6 +82,11 @@ export default async function NovelReaderPage({ params, searchParams }: Props) {
         <div className="grimoire-divider" aria-hidden="true">
           <span>❧</span>
         </div>
+
+        {/* Audiobook player — shown on every page if available */}
+        {meta.audiobookSrc && (
+          <AudiobookPlayer src={meta.audiobookSrc} title={meta.title} />
+        )}
 
         {/* Prose content */}
         <article className="grimoire-prose">
@@ -121,9 +132,7 @@ export default async function NovelReaderPage({ params, searchParams }: Props) {
             )}
           </div>
 
-          <div className="grimoire-page-num">
-            Page {currentPage} of {totalPages}
-          </div>
+          <PageJumper slug={slug} currentPage={currentPage} totalPages={totalPages} />
 
           <div className="grimoire-nav-next">
             {nextHref ? (
