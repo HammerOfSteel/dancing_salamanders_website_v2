@@ -108,7 +108,6 @@ export function Nav() {
           href="/"
           className="flex items-center gap-2 font-serif text-xl font-semibold text-foreground hover:text-primary transition-colors"
         >
-          <span className="text-primary">🦎</span>
           <span>Dancing Salamanders</span>
         </Link>
 

@@ -182,3 +182,344 @@
   .prose-ds ul li { margin-bottom: 0.4rem; }
   .prose-ds strong { color: oklch(0.80 0.100 75); font-weight: 600; }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   GRIMOIRE READER — novel reading experience
+   Fantasy parchment-dark aesthetic; serif, drop caps, ornamental dividers
+   ───────────────────────────────────────────────────────────────────────── */
+.grimoire-outer {
+  min-height: 100vh;
+  background-color: #0d0a06;
+  padding-bottom: 5rem;
+}
+
+.grimoire-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 0;
+}
+
+.grimoire-back {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #7a6f5e;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.grimoire-back:hover { color: #c9a84c; }
+
+.grimoire-collection {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a6f5e;
+}
+
+.grimoire-page {
+  max-width: 680px;
+  margin: 2rem auto 0;
+  padding: 3rem 3.5rem 3.5rem;
+  background-color: #120e08;
+  border: 1px solid #2e2516;
+  box-shadow:
+    0 0 0 4px #0d0a06,
+    0 0 0 5px #2e2516,
+    inset 0 0 80px rgba(0, 0, 0, 0.5),
+    0 20px 60px rgba(0, 0, 0, 0.8);
+  position: relative;
+}
+
+/* Corner ornaments */
+.grimoire-page::before,
+.grimoire-page::after {
+  content: "✦";
+  position: absolute;
+  color: #3a2e1a;
+  font-size: 0.75rem;
+  top: 0.8rem;
+}
+.grimoire-page::before { left: 1rem; }
+.grimoire-page::after  { right: 1rem; }
+
+@media (max-width: 720px) {
+  .grimoire-page {
+    margin: 1rem;
+    padding: 2rem 1.5rem 2.5rem;
+  }
+}
+
+/* Title block */
+.grimoire-title-block {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.grimoire-ornament {
+  color: #c9a84c;
+  font-size: 0.6rem;
+  letter-spacing: 0.5em;
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
+}
+
+.grimoire-title {
+  font-family: var(--font-crimson), Georgia, serif;
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  font-weight: 600;
+  color: #e8dcc8;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  margin-bottom: 0.4rem;
+}
+
+.grimoire-year {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  color: #7a6f5e;
+  margin-bottom: 1.25rem;
+}
+
+.grimoire-title-excerpt {
+  font-family: var(--font-crimson), Georgia, serif;
+  font-size: 1.05rem;
+  font-style: italic;
+  color: #a89a80;
+  line-height: 1.65;
+  max-width: 480px;
+  margin: 0 auto 1.25rem;
+}
+
+.grimoire-stats {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: #6a5f4e;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.grimoire-dot { opacity: 0.5; }
+
+/* Ornamental divider */
+.grimoire-divider {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 1.75rem 0;
+  color: #3a2e1a;
+}
+
+.grimoire-divider::before,
+.grimoire-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #3a2e1a, transparent);
+}
+
+.grimoire-divider span {
+  color: #c9a84c;
+  font-size: 1rem;
+  opacity: 0.5;
+  padding: 0 0.75rem;
+}
+
+/* Prose */
+.grimoire-prose {
+  /* nothing extra — paragraph styles handle it */
+}
+
+.grimoire-para {
+  font-family: var(--font-crimson), Georgia, serif;
+  font-size: 1.175rem;
+  line-height: 1.85;
+  color: #d8ccb8;
+  margin-bottom: 1.4rem;
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* Drop cap on first paragraph of page 1 */
+.grimoire-dropcap::first-letter {
+  font-family: var(--font-crimson), Georgia, serif;
+  font-size: 4.2em;
+  font-weight: 700;
+  float: left;
+  line-height: 0.82;
+  margin: 0.06em 0.08em 0 0;
+  color: #c9a84c;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.grimoire-section-heading {
+  font-family: var(--font-crimson), Georgia, serif;
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7a6f5e;
+  text-align: center;
+  margin: 2rem 0 1.5rem;
+}
+
+/* Navigation */
+.grimoire-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.grimoire-nav-prev,
+.grimoire-nav-next {
+  flex: 1;
+}
+
+.grimoire-nav-next {
+  text-align: right;
+}
+
+.grimoire-nav-btn {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: #a89a80;
+  text-decoration: none;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #2e2516;
+  transition: color 0.2s, border-color 0.2s;
+  display: inline-block;
+}
+.grimoire-nav-btn:hover {
+  color: #c9a84c;
+  border-color: #c9a84c;
+}
+
+.grimoire-nav-disabled {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: #3a2e1a;
+  padding: 0.4rem 0.8rem;
+  display: inline-block;
+}
+
+.grimoire-page-num {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a6f5e;
+  text-align: center;
+  flex: 1;
+}
+
+.grimoire-jump {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+}
+
+.grimoire-jump-link {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4a3d2e;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.grimoire-jump-link:hover { color: #c9a84c; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MANGA / WEBTOON VIEWER
+   ───────────────────────────────────────────────────────────────────────── */
+.webtoon-outer {
+  min-height: 100vh;
+  background-color: #0a0a0a;
+  padding-bottom: 3rem;
+}
+
+.webtoon-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background-color: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.webtoon-back {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #888;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.webtoon-back:hover { color: #fff; }
+
+.webtoon-title {
+  font-family: var(--font-crimson), Georgia, serif;
+  font-size: 1rem;
+  color: #ccc;
+  font-style: italic;
+}
+
+.webtoon-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.webtoon-zoom-btn {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #aaa;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.webtoon-zoom-btn:hover { background: #2a2a2a; color: #fff; }
+
+.webtoon-zoom-label {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.75rem;
+  color: #666;
+  min-width: 3.5rem;
+  text-align: center;
+}
+
+.webtoon-strip-wrapper {
+  display: flex;
+  justify-content: center;
+  overflow-x: hidden;
+  padding: 1.5rem 0;
+}
+
+.webtoon-strip {
+  transition: width 0.2s ease;
+}
