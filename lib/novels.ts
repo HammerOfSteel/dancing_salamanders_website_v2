@@ -80,10 +80,6 @@ function loadNovel(
     fs.existsSync(path.join(publicCoverDir, f))
   );
 
-  // Check for audiobook in public/audiobooks/novels/[slug]/
-  const audiobookPath = path.join(process.cwd(), "public", "audiobooks", "novels", slug, "audiobook.mp3");
-  const hasAudiobook = fs.existsSync(audiobookPath);
-
   const meta: NovelMeta = {
     slug,
     title: typeof rawMeta.title === "string" ? rawMeta.title : slugToTitle(slug),
@@ -92,7 +88,7 @@ function loadNovel(
     collectionSlug,
     excerpt: typeof rawMeta.excerpt === "string" ? rawMeta.excerpt : undefined,
     coverImage: foundCover ? `/images/books/novels/${slug}/${foundCover}` : undefined,
-    audiobookSrc: hasAudiobook ? `/audiobooks/novels/${slug}/audiobook.mp3` : undefined,
+    audiobookSrc: `/audiobooks/novels/${slug}/audiobook.mp3`,
     wordCount,
     pageCount: pages.length,
   };

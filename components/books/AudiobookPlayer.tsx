@@ -23,6 +23,7 @@ export function AudiobookPlayer({ src, title }: Props) {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
+  const [available, setAvailable] = useState(true);
   const lastSaveRef = useRef(0);
   const storageKey = `audiobook:${src}`;
 
@@ -107,6 +108,9 @@ export function AudiobookPlayer({ src, title }: Props) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const displayVolume = muted ? 0 : volume;
 
+  // Hide if the audio file failed to load (e.g. not yet uploaded to server)
+  if (!available) return null;
+
   return (
     <div className="audiobook-player">
       <audio
@@ -118,6 +122,7 @@ export function AudiobookPlayer({ src, title }: Props) {
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
+        onError={() => setAvailable(false)}
       />
 
       {/* Header */}
