@@ -1,28 +1,19 @@
 name: Deploy Website to Production
 
-# ── Manual trigger only ────────────────────────────────────────────────────
-# Add  push: { branches: [main] }  once the server has been inspected and
-# the nginx site config / port confirmed.
+# Auto-deploy on push to main, or trigger manually
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
-# ── Required GitHub Secrets ────────────────────────────────────────────────
-# DEPLOY_HOST       — 129.151.193.219 (same server as music visualizer)
-# DEPLOY_USER       — ubuntu or ubuntusthlm (confirm from server)
-# DEPLOY_SSH_KEY    — private key (contents of super_secret_just_for_you.txt)
-# CERTBOT_EMAIL     — email for Let's Encrypt
+# Required GitHub Secrets:
+#   DEPLOY_HOST     — 129.151.193.219
+#   DEPLOY_USER     — ubuntu
+#   DEPLOY_SSH_KEY  — private key (contents of super_secret_just_for_you.txt)
 #
-# ── TODO before first run ──────────────────────────────────────────────────
-# 1. SSH in and check:
-#    - existing docker-compose services  (sudo docker ps)
-#    - existing nginx sites              (ls /etc/nginx/sites-enabled/)
-#    - port 3005 availability            (ss -tlnp | grep 3005)
-# 2. Confirm / adjust:
-#    - DOMAIN below (DNS set up: dancingsalamanders.com → 129.151.193.219)
-#    - port in docker-compose.prod.yml (3007 — 3005 is livlust, 3006 is visualizer)
-#    - DEPLOY_USER (ubuntu or ubuntusthlm)
-# 3. .env.production on the server must contain:
-#    NEXT_PUBLIC_VISUALIZER_URL=https://music.dancingsalamanders.com
+# Note: .env.production must already exist at /opt/dancing-salamanders/.env.production
+# (created once manually on the server — never committed to git).
+# The visualizer runs independently at /opt/music-visualizer — no need to redeploy it here.
 
 jobs:
   deploy:
@@ -39,44 +30,18 @@ jobs:
           script: |
             set -e
 
-            REPO_URL="https://github.com/HammerOfSteel/dancing_salamanders_website_v2.git"
             DEPLOY_DIR="/opt/dancing-salamanders"
-            DOMAIN="dancingsalamanders.com"          # TODO: confirm domain
-            NGINX_SITE="/etc/nginx/sites-available/${DOMAIN}"
-            NGINX_ENABLED="/etc/nginx/sites-enabled/${DOMAIN}"
 
-            # ── 1. Clone or pull latest code ──────────────────────────────
-            if [ ! -d "${DEPLOY_DIR}/.git" ]; then
-              sudo git clone "${REPO_URL}" "${DEPLOY_DIR}"
-            else
-              cd "${DEPLOY_DIR}"
-              sudo git fetch origin main
-              sudo git reset --hard origin/main
-            fi
-
+            # 1. Pull latest code
             cd "${DEPLOY_DIR}"
+            git fetch origin main
+            git reset --hard origin/main
 
-            # ── 2. Build and start production containers ──────────────────
-            sudo docker compose -f docker-compose.prod.yml up --build -d
+            # 2. Rebuild app image and restart containers
+            sudo docker compose -f docker-compose.prod.yml build app
+            sudo docker compose -f docker-compose.prod.yml up -d
 
-            # ── 3. Install nginx site config (first deploy only) ──────────
-            if [ ! -f "${NGINX_SITE}" ]; then
-              sudo cp "${DEPLOY_DIR}/deploy/nginx-website.conf" "${NGINX_SITE}"
-              sudo ln -sf "${NGINX_SITE}" "${NGINX_ENABLED}"
-              sudo nginx -t
-              sudo systemctl reload nginx
-              echo "Nginx site installed for ${DOMAIN}."
-            fi
-
-            # ── 4. Obtain TLS certificate (once per domain) ───────────────
-            if [ ! -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
-              sudo certbot --nginx -d "${DOMAIN}" -d "www.${DOMAIN}" \
-                --non-interactive --agree-tos \
-                --email "${{ secrets.CERTBOT_EMAIL }}"
-              echo "Certificate obtained for ${DOMAIN}."
-            fi
-
-            # ── 5. Clean up dangling images ────────────────────────────────
+            # 3. Clean up dangling images
             sudo docker image prune -f
 
-            echo "Deployment complete: https://${DOMAIN}"
+            echo "Deployment complete: https://dancingsalamanders.com"
