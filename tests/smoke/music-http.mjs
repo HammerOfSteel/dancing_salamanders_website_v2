@@ -41,6 +41,23 @@ async function main() {
   // music page but nothing can be played. Catches nested-folder + orphan-folder bugs.
   const emptyAlbums = data.albums.filter((a) => a.tracks.length === 0);
 
+  // Naming standard: folder = foo_bar (lowercase, digits, underscore only);
+  // track = NN_foo_bar.mp3 (two-digit number, underscore, lowercase slug).
+  const FOLDER_RE = /^[a-z0-9_]+$/;
+  const TRACK_RE = /^\d{2}_[a-z0-9_]+\.mp3$/;
+  const namingViolations = [];
+  for (const album of data.albums) {
+    if (!FOLDER_RE.test(album.folderName)) {
+      namingViolations.push({ type: "folder", name: album.folderName });
+    }
+    for (const track of album.tracks) {
+      const filename = track.url.split("/").pop();
+      if (!TRACK_RE.test(filename)) {
+        namingViolations.push({ type: "track", album: album.folderName, name: filename });
+      }
+    }
+  }
+
   const results = [];
   for (const album of data.albums) {
     for (const track of album.tracks) {
@@ -81,11 +98,21 @@ async function main() {
   console.log(`=== SUMMARY ===`);
   console.log(`total albums: ${data.albums.length}`);
   console.log(`empty albums (0 tracks): ${emptyAlbums.length}`);
+  console.log(`naming violations: ${namingViolations.length}`);
   console.log(`total tracks: ${results.length}`);
   console.log(`OK (200/206): ${ok.length}`);
   console.log(`404:          ${notFound.length}`);
   console.log(`other:        ${other.length}`);
   console.log("");
+
+  if (namingViolations.length) {
+    console.log("=== NAMING VIOLATIONS (must be foo_bar / NN_foo_bar.mp3) ===");
+    for (const v of namingViolations) {
+      if (v.type === "folder") console.log(`FOLDER  ${v.name}`);
+      else console.log(`TRACK   ${v.album}/${v.name}`);
+    }
+    console.log("");
+  }
 
   if (emptyAlbums.length) {
     console.log("=== EMPTY ALBUMS (0 playable tracks — FAIL) ===");
@@ -129,8 +156,8 @@ async function main() {
     console.log(`${mark}  ${album}  (ok=${c.ok} fail=${c.fail})`);
   }
 
-  // Exit non-zero if any track is not servable OR any album has zero tracks
-  const failed = notFound.length + other.length + emptyAlbums.length;
+  // Exit non-zero if any track is not servable OR any album has zero tracks OR any naming violation
+  const failed = notFound.length + other.length + emptyAlbums.length + namingViolations.length;
   process.exit(failed === 0 ? 0 : 1);
 }
 
