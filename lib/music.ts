@@ -27,7 +27,7 @@ const COVER_NAMES = ["cover.jpg", "cover.png", "cover.webp", "cover.jpeg"];
 
 function slugToTitle(slug: string): string {
   return slug
-    .split("-")
+    .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
@@ -40,44 +40,18 @@ function parseTrackNumber(filename: string): number {
 function parseTrackTitle(filename: string): string {
   // Remove extension
   const noExt = filename.replace(/\.[^.]+$/, "");
-  // Remove leading track number: "01 - " or "01." or "03-"
-  const withoutNumber = noExt.replace(/^\d+\s*[-–.]\s*/, "").trim();
+  // Remove leading track number and separator: "01_" or "01 - " or "01." or "03-"
+  const withoutNumber = noExt
+    .replace(/^\d+_/, "")
+    .replace(/^\d+\s*[-–.]\s*/, "")
+    .trim();
+  // Replace underscores with spaces
+  const withSpaces = withoutNumber.replace(/_/g, " ");
   // Remove artist prefix: "Dancing salamanders - " (case-insensitive, optional trailing 's')
-  const withoutArtist = withoutNumber
+  const withoutArtist = withSpaces
     .replace(/^dancing salamanders?\s*[-–]\s*/i, "")
     .trim();
   return withoutArtist || noExt;
-}
-
-/** If an album dir has no audio directly, look one level deeper (e.g. Daffodil/daffodil/). */
-function findTrackDir(albumDir: string): { trackDir: string; urlBase: string } {
-  const albumDirName = path.basename(albumDir);
-  const parentDirName = path.basename(path.dirname(albumDir));
-
-  const direct = fs
-    .readdirSync(albumDir)
-    .filter((f) => AUDIO_EXTENSIONS.has(path.extname(f).toLowerCase()));
-
-  if (direct.length > 0) {
-    return { trackDir: albumDir, urlBase: `/music/${albumDirName}` };
-  }
-
-  // Search one subdir level
-  for (const entry of fs.readdirSync(albumDir, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const subDir = path.join(albumDir, entry.name);
-    const subFiles = fs
-      .readdirSync(subDir)
-      .filter((f) => AUDIO_EXTENSIONS.has(path.extname(f).toLowerCase()));
-    if (subFiles.length > 0) {
-      return {
-        trackDir: subDir,
-        urlBase: `/music/${albumDirName}/${entry.name}`,
-      };
-    }
-  }
-
-  return { trackDir: albumDir, urlBase: `/music/${albumDirName}` };
 }
 
 export function getAlbums(): Album[] {
@@ -103,11 +77,9 @@ export function getAlbums(): Album[] {
       ? `/music/${albumSlug}/${coverFile}`
       : "/images/placeholder-cover.jpg";
 
-    // Find audio tracks — handles one-level-deep nesting (e.g. Daffodil/daffodil/)
-    const { trackDir, urlBase } = findTrackDir(albumDir);
-    const trackFiles = fs.readdirSync(trackDir);
-
-    const tracks: Track[] = trackFiles
+    // Find audio tracks — flat structure: all tracks live directly in the album folder
+    const urlBase = `/music/${albumSlug}`;
+    const tracks: Track[] = files
       .filter((f) => AUDIO_EXTENSIONS.has(path.extname(f).toLowerCase()))
       .map((f) => ({
         title: parseTrackTitle(f),
@@ -116,7 +88,7 @@ export function getAlbums(): Album[] {
       }))
       .sort((a, b) => a.trackNumber - b.trackNumber);
 
-    dbg(`album="${albumSlug}" trackDir="${trackDir}" urlBase="${urlBase}" tracks=`, tracks.map((t) => t.src));
+    dbg(`album="${albumSlug}" urlBase="${urlBase}" tracks=`, tracks.map((t) => t.src));
 
     albums.push({
       slug: albumSlug,
