@@ -1,6 +1,13 @@
 import fs from "fs";
 import path from "path";
 
+// [MusicLib] Structured debug logging — only active when DEBUG_MUSIC=true.
+// Set this env var on the server or in .env.production to trace album discovery.
+const DEBUG = process.env.DEBUG_MUSIC === "true";
+function dbg(...args: unknown[]) {
+  if (DEBUG) console.debug("[MusicLib]", ...args);
+}
+
 export interface Track {
   title: string;
   src: string;
@@ -74,9 +81,13 @@ function findTrackDir(albumDir: string): { trackDir: string; urlBase: string } {
 }
 
 export function getAlbums(): Album[] {
+  dbg("MUSIC_DIR =", MUSIC_DIR);
+  dbg("exists =", fs.existsSync(MUSIC_DIR));
+
   if (!fs.existsSync(MUSIC_DIR)) return [];
 
   const entries = fs.readdirSync(MUSIC_DIR, { withFileTypes: true });
+  dbg("top-level entries =", entries.map((e) => e.name));
   const albums: Album[] = [];
 
   for (const entry of entries) {
@@ -104,6 +115,8 @@ export function getAlbums(): Album[] {
         trackNumber: parseTrackNumber(f),
       }))
       .sort((a, b) => a.trackNumber - b.trackNumber);
+
+    dbg(`album="${albumSlug}" trackDir="${trackDir}" urlBase="${urlBase}" tracks=`, tracks.map((t) => t.src));
 
     albums.push({
       slug: albumSlug,
