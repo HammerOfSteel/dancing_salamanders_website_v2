@@ -19,6 +19,10 @@ public/music/
 - Use lowercase, hyphens for spaces: `threads-between-the-stars`
 - This slug is used in the URL and converted to a display title automatically
 - Example: `the-alchemists-estate` → "The Alchemists Estate"
+- To control display order, prefix the folder name with a 2-digit number and
+  an underscore: `01_root_access`, `02_ordain`, etc. The prefix is stripped
+  from the slug/title and used only for sorting. Folders without a numeric
+  prefix are sorted alphabetically after all prefixed albums.
 
 ### Track files
 - Prefix each filename with a 2-digit number: `01`, `02`, etc.

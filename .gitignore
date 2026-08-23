@@ -57,4 +57,11 @@ content/books/manga/**/*.webp
 content/books/novels/**/*.mp3
 content/books/novels/**/*.wav
 public/audiobooks/**/*.mp3
+public/books/**/*.wav
+public/books/**/*.mp3
 super_secret_just_for_you.txt
+super-secret-ssh.txt
+kamatera.api.keys.md
+
+# staging area for unreleased/dropped tracks — not served, not committed
+unpublished/

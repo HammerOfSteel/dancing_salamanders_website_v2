@@ -1,0 +1,43 @@
+---
+title: "Seren Devlog #3 — Trading the Visual Novel for an Earthbound Heart"
+date: "2026-08-08"
+game: "Seren"
+excerpt: "Seren is pivoting from a visual novel to a retro 16-bit isometric LitRPG, chasing the specific quirk of Earthbound and Mother 3 instead of cinematic stillness — mundane objects as gear, a frying pan as a weapon, and grief hiding underneath all of it. Plus: what the Meshy community taught me about finding a look instead of just making one."
+tags: ["devlog", "design philosophy", "isometric", "LitRPG", "Earthbound", "Meshy", "Seren"]
+featured: false
+---
+
+Seren has changed shape again. The current build lives on a branch called [`feature/v4-litrpg-isometric`](https://github.com/HammerOfSteel/seren/tree/feature/v4-litrpg-isometric/V4_LitRPG_3D_Isometric_Topdown), and honestly it's a return more than a departure — before Seren was a visual novel, it was a 3D top-down isometric game. It's one again, and this time the genre has a name: a 16-bit LitRPG, built in React Three Fiber, that owes everything to *Earthbound*.
+
+## Why the Visual Novel Had to Go
+
+The visual novel format gave this project something real: stillness, a frame-by-frame kind of intentionality, total control over pace. But the longer I sat with it, the more it felt like showing someone photographs of a place instead of letting them walk through it. The story is now about Rhys — a grieving, exhausted dad searching the Otherworld for his missing daughter, Seren — and that story wants a body that can move, a house that can be rested in, a village that can be explored street by street. A visual novel asks the player to trust the author completely: here is the frame, here is the meaning. An isometric RPG hands the player a character and a map and says *go look for her yourself*. For a story about searching, that agency turns out to matter more than I gave it credit for.
+
+## Why It Had to Be Earthbound
+
+I kept measuring the mood I wanted against *Earthbound*, *Mother 3*, and *Chrono Trigger*, and the visual novel never got me there. Earthbound's trick isn't its technology, it's how *unserious* it looks while being completely serious underneath — mechanical HP odometers that tick down in red, dialogue boxes with a typewriter click, battle backgrounds that are just swirling psychedelic wallpaper — and inside all of that, real grief and real dread. The quirk isn't decoration. It's the thing that lets the sincerity land without curdling into melodrama.
+
+So the design documents for this build split the whole game into two aesthetics on purpose:
+
+- **Elfydd**, the mundane modern Wales — muted slate greys, wet tarmac, the warm amber glow of a chip shop window, acoustic Welsh folk on the soundtrack, rain as constant ambience.
+- **Annwn**, the Otherworld — hyper-saturated, logic-defying, clashing magentas and toxic chartreuse against void black, a soundtrack of chiptune in odd time signatures and synths that are very deliberately slightly out of tune.
+
+The jarring contrast *is* the game's argument: grief and the fae both feel like stepping out of a world that makes sense into one that doesn't, and back again.
+
+And then there's the party, which is where the Earthbound DNA is most literal. Rhys fights fae with a cast-iron frying pan and a thermos of tea that heals. His best mate Cai swings a cricket bat and a pool cue from the rugby club. Ffion, the local librarian, throws hardcover encyclopedias and casts spells by correctly footnoting folklore. Elain, a changeling who can't touch iron without being poisoned by it, fights with river stones and stolen shiny things. Healing items are battered sausages and full Welsh breakfasts, not potions. Nobody in this party is a hero by training — they're ordinary people from a Welsh village, armed with whatever was already in the house, which is exactly the joke and exactly the point Earthbound made thirty years ago.
+
+## The Folklore Didn't Go Anywhere
+
+None of the earlier worldbuilding got thrown out — it just moved genre. Annwn is still the Welsh Otherworld from the *Mabinogion*, ruled here by a Tylwyth Teg lord called the Creditor who holds a literal contract on Seren. The Mari Lwyd — the skeletal horse-skull figure from Welsh midwinter tradition — shows up as a recurring optional boss. The alchemical and mythic structure that shaped the visual novel is still the skeleton; the LitRPG format just gave it a body to walk around in, and stats to make the transformation visible instead of only implied.
+
+## Meshy, and Finding a Look Instead of Making One
+
+I've written before about using [Meshy AI](https://www.meshy.ai/) in this project's art pipeline as a generation tool — prompt, iterate, refine, place. That's still true. But being part of Meshy's contributor program has changed how I use it in a way I didn't expect: the community feed is doing as much work for me as the generator itself.
+
+Scrolling through what other people in that community are building isn't asset-shopping, it's closer to flipping through other people's sketchbooks. Someone's wrong-on-purpose colour choice, a low-poly prop that shouldn't be charming but is — that's genuinely where I found my way back to a chunkier, more sincere-but-silly direction for this build, faster than staring at my own references would have gotten me there. Meshy the tool gets me geometry and props I couldn't hand-model in time. Meshy the community gets me taste. I'd been underrating the second one.
+
+## Where the Build Actually Stands
+
+This part isn't aspirational — the engine underneath all of this is real and tested. The isometric camera, tile grid, player movement, turn-based combat, and the iron-versus-fae damage mechanic are all built and passing their test suite. Next up is wiring in NPCs and dialogue, then the Cwm Deri hub map itself — the village Rhys has to search room by room, pub by pub, on the way into Annwn.
+
+More to follow.
