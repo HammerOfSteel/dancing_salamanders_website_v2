@@ -4,8 +4,10 @@
 // Uses jsdom so `new Audio()` / localStorage are available; audio.play()/.load()
 // are stubbed no-ops in jsdom (logged as "not implemented" but do not throw),
 // which is fine here since cueTrack never calls .play().
+// `npm test`/`npm test:watch` require NODE_OPTIONS=--no-experimental-webstorage
+// (set in package.json scripts) to avoid a Node v26 vs jsdom localStorage conflict.
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { MusicPlayerProvider, useMusicPlayer } from "../../lib/music-context";
 import type { Album } from "../../lib/music-context";
@@ -22,6 +24,8 @@ const album: Album = {
 
 describe("useMusicPlayer().cueTrack", () => {
   it("loads the given track and updates state without playing it", () => {
+    const playSpy = vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(() => Promise.resolve());
+
     const { result } = renderHook(() => useMusicPlayer(), {
       wrapper: MusicPlayerProvider,
     });
@@ -33,6 +37,9 @@ describe("useMusicPlayer().cueTrack", () => {
     expect(result.current.currentAlbum?.slug).toBe("test-album");
     expect(result.current.currentTrackIndex).toBe(1);
     expect(result.current.isPlaying).toBe(false);
+    expect(playSpy).not.toHaveBeenCalled();
+
+    playSpy.mockRestore();
   });
 
   it("does nothing if the trackIndex is out of range", () => {
