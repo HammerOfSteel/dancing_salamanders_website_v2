@@ -20,14 +20,11 @@ async function coverArtDataUri(coverPath: string): Promise<string | null> {
     const relativePath = coverPath.replace(/^\//, "");
     const absolutePath = path.join(process.cwd(), "public", relativePath);
     if (!fs.existsSync(absolutePath)) return null;
-    const ext = path.extname(absolutePath).slice(1).toLowerCase() || "jpeg";
     const bytes = fs.readFileSync(absolutePath);
-    // satori (used by next/og's ImageResponse) only understands png/jpeg/gif
-    // raster images, so formats like webp must be converted first.
-    if (ext === "png" || ext === "jpg" || ext === "jpeg" || ext === "gif") {
-      const mime = ext === "jpg" ? "jpeg" : ext;
-      return `data:image/${mime};base64,${bytes.toString("base64")}`;
-    }
+    // Always normalize to PNG via sharp (which sniffs the real format from
+    // content, not the file extension) — some cover files on disk are
+    // mislabeled (e.g. PNG bytes with a ".jpg" extension), which previously
+    // caused satori to crash trying to decode them as the extension's format.
     const pngBuffer = await sharp(bytes).png().toBuffer();
     return `data:image/png;base64,${pngBuffer.toString("base64")}`;
   } catch {

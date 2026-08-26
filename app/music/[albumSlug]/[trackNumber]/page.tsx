@@ -7,11 +7,10 @@ interface Props {
   params: Promise<{ albumSlug: string; trackNumber: string }>;
 }
 
-export async function generateStaticParams() {
-  return getAlbums().flatMap((a) =>
-    a.tracks.map((t) => ({ albumSlug: a.slug, trackNumber: String(t.trackNumber) }))
-  );
-}
+// Real audio files are volume-mounted at runtime, not present in the Docker
+// build context (see .dockerignore) — this must render per-request, not be
+// statically generated, or it bakes in an empty track list forever.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { albumSlug, trackNumber } = await params;
