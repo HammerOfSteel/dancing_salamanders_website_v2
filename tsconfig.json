@@ -30,5 +30,8 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  // tests/** pull in jsdom/@testing-library/react types, which meaningfully
+  // increase type-check memory usage during `next build` for no production
+  // benefit — the production VPS has limited RAM and no headroom for this.
+  "exclude": ["node_modules", "tests/**"]
 }

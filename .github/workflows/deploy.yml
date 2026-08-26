@@ -77,8 +77,12 @@ jobs:
               echo "Certificate obtained for ${DOMAIN}."
             fi
 
-            # ── 6. Clean up dangling images ────────────────────────────────
+            # ── 6. Clean up dangling images and stale build cache ─────────
+            # buildx cache is NOT touched by `docker image prune` and grows
+            # unbounded across deploys — left unchecked it fills the disk
+            # (this host has only 20GB) and can OOM/fail the next build.
             sudo docker image prune -f
+            sudo docker builder prune -f --filter "until=24h"
 
             echo "Deployment complete: https://${DOMAIN}"
 
