@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils";
 
 interface AlbumDetailProps {
   album: Album;
+  onTrackSelect?: (album: Album, trackIndex: number) => void;
 }
 
-export function AlbumDetail({ album }: AlbumDetailProps) {
+export function AlbumDetail({ album, onTrackSelect }: AlbumDetailProps) {
   const { currentAlbum, currentTrackIndex, isPlaying, playAlbum, playTrack, togglePlay } =
     useMusicPlayer();
 
@@ -83,7 +84,10 @@ export function AlbumDetail({ album }: AlbumDetailProps) {
                     <button
                       onClick={() => {
                         if (isTrackActive) togglePlay();
-                        else playTrack(album, idx);
+                        else {
+                          playTrack(album, idx);
+                          onTrackSelect?.(album, idx);
+                        }
                       }}
                       className={cn(
                         "group w-full flex items-center gap-3 px-2 py-2 rounded-md text-left",
