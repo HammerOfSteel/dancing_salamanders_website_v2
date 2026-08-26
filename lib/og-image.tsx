@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import fs from "fs";
 import path from "path";
+import sharp from "sharp";
 
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
@@ -11,7 +12,7 @@ const BG_COLOR = "#141b10"; // deep forest night
 const TEXT_COLOR = "#f2ecdd"; // warm cream
 const ACCENT_COLOR = "#c98a4b"; // amber ember
 
-function coverArtDataUri(coverPath: string): string | null {
+async function coverArtDataUri(coverPath: string): Promise<string | null> {
   try {
     // coverPath is a public/-relative URL like "/music/01_ordain/cover.jpg" —
     // strip the leading slash before joining, or path.join would discard
@@ -19,10 +20,16 @@ function coverArtDataUri(coverPath: string): string | null {
     const relativePath = coverPath.replace(/^\//, "");
     const absolutePath = path.join(process.cwd(), "public", relativePath);
     if (!fs.existsSync(absolutePath)) return null;
-    const ext = path.extname(absolutePath).slice(1) || "jpeg";
-    const mime = ext === "jpg" ? "jpeg" : ext;
+    const ext = path.extname(absolutePath).slice(1).toLowerCase() || "jpeg";
     const bytes = fs.readFileSync(absolutePath);
-    return `data:image/${mime};base64,${bytes.toString("base64")}`;
+    // satori (used by next/og's ImageResponse) only understands png/jpeg/gif
+    // raster images, so formats like webp must be converted first.
+    if (ext === "png" || ext === "jpg" || ext === "jpeg" || ext === "gif") {
+      const mime = ext === "jpg" ? "jpeg" : ext;
+      return `data:image/${mime};base64,${bytes.toString("base64")}`;
+    }
+    const pngBuffer = await sharp(bytes).png().toBuffer();
+    return `data:image/png;base64,${pngBuffer.toString("base64")}`;
   } catch {
     return null;
   }
@@ -34,8 +41,8 @@ interface PreviewCardOptions {
   coverPath?: string;
 }
 
-export function renderPreviewCard({ topText, subText, coverPath }: PreviewCardOptions): ImageResponse {
-  const coverDataUri = coverPath ? coverArtDataUri(coverPath) : null;
+export async function renderPreviewCard({ topText, subText, coverPath }: PreviewCardOptions): Promise<ImageResponse> {
+  const coverDataUri = coverPath ? await coverArtDataUri(coverPath) : null;
 
   return new ImageResponse(
     (

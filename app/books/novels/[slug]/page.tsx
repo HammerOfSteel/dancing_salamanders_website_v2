@@ -4,6 +4,8 @@ import { getAllNovels, getNovelBySlug } from "@/lib/novels";
 import { AudiobookPlayer } from "@/components/books/AudiobookPlayer";
 import { NovelProgressClient } from "@/components/books/NovelProgressClient";
 import { PageJumper } from "@/components/books/PageJumper";
+import { ShareButton } from "@/components/shared/ShareButton";
+import { getAbsoluteUrl } from "@/lib/utils";
 import type { Metadata } from "next";
 
 interface Props {
@@ -22,6 +24,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${novel.meta.title} — ${novel.meta.collection}`,
     description: novel.meta.excerpt,
+    openGraph: {
+      title: novel.meta.title,
+      description: novel.meta.excerpt,
+    },
   };
 }
 
@@ -63,7 +69,14 @@ export default async function NovelReaderPage({ params, searchParams }: Props) {
         {currentPage === 1 && (
           <div className="grimoire-title-block">
             <div className="grimoire-ornament">✦ ✦ ✦</div>
-            <h1 className="grimoire-title">{meta.title}</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="grimoire-title">{meta.title}</h1>
+              <ShareButton
+                url={getAbsoluteUrl(`/books/novels/${slug}`)}
+                title={meta.title}
+                text={`${meta.title} — Dancing Salamanders`}
+              />
+            </div>
             {meta.year && <p className="grimoire-year">{meta.year}</p>}
             {meta.excerpt && (
               <p className="grimoire-title-excerpt">{meta.excerpt}</p>
