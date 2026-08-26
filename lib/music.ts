@@ -129,3 +129,7 @@ export function getAlbumBySlug(slug: string): Album | null {
   const albums = getAlbums();
   return albums.find((a) => a.slug === slug) ?? null;
 }
+
+export function findTrackIndexByNumber(album: Album, trackNumber: number): number {
+  return album.tracks.findIndex((t) => t.trackNumber === trackNumber);
+}
