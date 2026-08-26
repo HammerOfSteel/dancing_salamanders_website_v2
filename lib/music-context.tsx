@@ -36,6 +36,7 @@ interface PlayerState {
 interface PlayerActions {
   playAlbum: (album: Album, trackIndex?: number) => void;
   playTrack: (album: Album, trackIndex: number) => void;
+  cueTrack: (album: Album, trackIndex: number) => void;
   pause: () => void;
   resume: () => void;
   togglePlay: () => void;
@@ -151,6 +152,24 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     [loadAndPlay]
   );
 
+  const cueTrack = useCallback((album: Album, trackIndex: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const track = album.tracks[trackIndex];
+    if (!track) return;
+
+    audio.src = track.src;
+    audio.load();
+
+    setCurrentAlbum(album);
+    setCurrentTrackIndex(trackIndex);
+
+    localStorage.setItem(
+      LAST_PLAYED_KEY,
+      JSON.stringify({ albumSlug: album.slug, trackIndex })
+    );
+  }, []);
+
   const pause = useCallback(() => audioRef.current?.pause(), []);
 
   const resume = useCallback(() => audioRef.current?.play().catch(() => {}), []);
@@ -203,6 +222,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     volume,
     playAlbum,
     playTrack,
+    cueTrack,
     pause,
     resume,
     togglePlay,
