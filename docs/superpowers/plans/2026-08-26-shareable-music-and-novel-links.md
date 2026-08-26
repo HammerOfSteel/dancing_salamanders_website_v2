@@ -821,3 +821,455 @@ git commit -m "feat(og): generate social preview images for album and track rout
 ```
 
 **End of Chunk 1.**
+
+---
+
+## Chunk 2: Share buttons, novels, and testing
+
+### Task 9: Add `getAbsoluteUrl` helper and `ShareButton` component
+
+**Files:**
+- Modify: `lib/utils.ts`
+- Create: `components/shared/ShareButton.tsx`
+
+- [ ] **Step 1: Add `getAbsoluteUrl` to `lib/utils.ts`**
+
+Append to the end of `lib/utils.ts` (keep the existing `cn` export as-is):
+
+```ts
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.dancingsalamanders.com";
+
+export function getAbsoluteUrl(path: string): string {
+  return `${SITE_URL}${path}`;
+}
+```
+
+- [ ] **Step 2: Create `components/shared/ShareButton.tsx`**
+
+```tsx
+"use client";
+
+import { useState } from "react";
+import { Share2, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+interface ShareButtonProps {
+  url: string;
+  title?: string;
+  text?: string;
+  className?: string;
+}
+
+export function ShareButton({ url, title, text, className }: ShareButtonProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+      } catch {
+        // User cancelled the share sheet, or the OS declined it — not an error.
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard write blocked (e.g. permissions) — not an error, fail silently.
+    }
+  };
+
+  return (
+    <Button
+      type="button"
+      onClick={handleShare}
+      variant="ghost"
+      size="icon-sm"
+      className={cn(className)}
+      aria-label={copied ? "Link copied" : "Share"}
+    >
+      {copied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
+    </Button>
+  );
+}
+```
+
+Note: `type="button"` is set explicitly since this component will sometimes be rendered as a sibling of other interactive elements inside forms/rows — without it, a `<button>` defaults to `type="submit"` which could trigger unrelated form submissions.
+
+- [ ] **Step 3: Verify it type-checks**
+
+Run: `npx tsc --noEmit`
+Expected: No new type errors.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add lib/utils.ts components/shared/ShareButton.tsx
+git commit -m "feat(shared): add ShareButton component and getAbsoluteUrl helper"
+```
+
+---
+
+### Task 10: Wire `ShareButton` into `AlbumDetail`
+
+**Files:**
+- Modify: `components/music/AlbumDetail.tsx`
+
+The current track row markup is a single `<button>` wrapping the entire row (number/indicator + title). Adding a `ShareButton` (itself a `<button>`) inside would create an invalid nested-button. This task restructures each track row into a flex container with two sibling buttons: the existing play/pause button (now `flex-1` instead of `w-full`) and the new `ShareButton`.
+
+- [ ] **Step 1: Add imports**
+
+At the top of `components/music/AlbumDetail.tsx`, add:
+
+```tsx
+import { ShareButton } from "@/components/shared/ShareButton";
+import { getAbsoluteUrl } from "@/lib/utils";
+```
+
+- [ ] **Step 2: Add a `ShareButton` to the album header**
+
+Change:
+
+```tsx
+            <div>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 flex items-center gap-1">
+                <ListMusic className="h-3 w-3" /> Album
+              </p>
+              <h2 className="font-serif text-2xl font-semibold text-foreground leading-tight">
+                {album.title}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {album.tracks.length} track{album.tracks.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+```
+
+to:
+
+```tsx
+            <div>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 flex items-center gap-1">
+                <ListMusic className="h-3 w-3" /> Album
+              </p>
+              <div className="flex items-center gap-2">
+                <h2 className="font-serif text-2xl font-semibold text-foreground leading-tight">
+                  {album.title}
+                </h2>
+                <ShareButton
+                  url={getAbsoluteUrl(`/music/${album.slug}`)}
+                  title={album.title}
+                  text={`${album.title} — Dancing Salamanders`}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {album.tracks.length} track{album.tracks.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+```
+
+- [ ] **Step 3: Restructure each track row to add a `ShareButton` alongside the play button**
+
+Change the `<li>` body from:
+
+```tsx
+                  <li key={track.src}>
+                    <button
+                      onClick={() => {
+                        if (isTrackActive) togglePlay();
+                        else {
+                          playTrack(album, idx);
+                          onTrackSelect?.(album, idx);
+                        }
+                      }}
+                      className={cn(
+                        "group w-full flex items-center gap-3 px-2 py-2 rounded-md text-left",
+                        "transition-colors hover:bg-muted/60",
+                        isTrackActive && "bg-muted/40"
+                      )}
+                      aria-label={`${isTrackPlaying ? "Pause" : "Play"} ${track.title}`}
+                    >
+```
+
+to:
+
+```tsx
+                  <li key={track.src} className="group flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        if (isTrackActive) togglePlay();
+                        else {
+                          playTrack(album, idx);
+                          onTrackSelect?.(album, idx);
+                        }
+                      }}
+                      className={cn(
+                        "flex-1 min-w-0 flex items-center gap-3 px-2 py-2 rounded-md text-left",
+                        "transition-colors hover:bg-muted/60",
+                        isTrackActive && "bg-muted/40"
+                      )}
+                      aria-label={`${isTrackPlaying ? "Pause" : "Play"} ${track.title}`}
+                    >
+```
+
+(Note: `group` moved from the inner `<button>` to the `<li>`. The `group-hover:hidden`/`group-hover:block` classes further down, on the track-number/Play-icon swap, still work unchanged since they're still descendants of the element carrying `group` — hovering anywhere on the row, including over the new share button, now reveals the Play icon too, which is a harmless, arguably nicer, side effect.)
+
+Then, immediately after the closing `</button>` of that track button (i.e. right before the existing `</li>`), add the `ShareButton`:
+
+```tsx
+                    </button>
+                    <ShareButton
+                      url={getAbsoluteUrl(`/music/${album.slug}/${track.trackNumber}`)}
+                      title={track.title}
+                      text={`${track.title} — ${album.title} — Dancing Salamanders`}
+                      className={cn(
+                        "flex-shrink-0 mr-1 transition-opacity",
+                        isTrackActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      )}
+                    />
+                  </li>
+```
+
+- [ ] **Step 4: Verify the build succeeds**
+
+Run: `npm run build`
+Expected: Build completes with no errors.
+
+- [ ] **Step 5: Manually verify in the browser**
+
+Run: `npm run dev`, open `http://localhost:3000/music`, select an album.
+- Hover the album title → a share icon appears next to it; click it (on desktop, without Web Share API support) → clipboard receives `https://www.dancingsalamanders.com/music/<slug>` (or your `NEXT_PUBLIC_SITE_URL`), icon briefly shows a checkmark.
+- Hover a track row → a share icon fades in on the right; click it → clipboard receives the track URL.
+- Confirm the currently-playing track's share icon is visible even without hovering.
+- Confirm no browser console errors about nested `<button>` elements (React/DOM validation warnings).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add components/music/AlbumDetail.tsx
+git commit -m "feat(music): add share buttons to album header and track rows"
+```
+
+---
+
+### Task 11: Add social preview image, metadata, and share button to novel pages
+
+**Files:**
+- Create: `app/books/novels/[slug]/opengraph-image.tsx`
+- Modify: `app/books/novels/[slug]/page.tsx`
+
+- [ ] **Step 1: Create the novel OG image route**
+
+```tsx
+import { getNovelBySlug } from "@/lib/novels";
+import { renderPreviewCard } from "@/lib/og-image";
+
+export const size = { width: 1200, height: 630 };
+export const contentType = "image/png";
+
+export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const novel = getNovelBySlug(slug);
+  return renderPreviewCard({
+    topText: novel?.meta.title ?? "Dancing Salamanders",
+    coverPath: novel?.meta.coverImage,
+  });
+}
+```
+
+- [ ] **Step 2: Add `openGraph` fields to `generateMetadata` in `app/books/novels/[slug]/page.tsx`**
+
+Change:
+
+```tsx
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const novel = getNovelBySlug(slug);
+  if (!novel) return {};
+  return {
+    title: `${novel.meta.title} — ${novel.meta.collection}`,
+    description: novel.meta.excerpt,
+  };
+}
+```
+
+to:
+
+```tsx
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const novel = getNovelBySlug(slug);
+  if (!novel) return {};
+  return {
+    title: `${novel.meta.title} — ${novel.meta.collection}`,
+    description: novel.meta.excerpt,
+    openGraph: {
+      title: novel.meta.title,
+      description: novel.meta.excerpt,
+    },
+  };
+}
+```
+
+- [ ] **Step 3: Add a `ShareButton` next to the novel title**
+
+Add the import near the top of `app/books/novels/[slug]/page.tsx`:
+
+```tsx
+import { ShareButton } from "@/components/shared/ShareButton";
+import { getAbsoluteUrl } from "@/lib/utils";
+```
+
+Change the title block from:
+
+```tsx
+            <div className="grimoire-ornament">✦ ✦ ✦</div>
+            <h1 className="grimoire-title">{meta.title}</h1>
+            {meta.year && <p className="grimoire-year">{meta.year}</p>}
+```
+
+to:
+
+```tsx
+            <div className="grimoire-ornament">✦ ✦ ✦</div>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="grimoire-title">{meta.title}</h1>
+              <ShareButton
+                url={getAbsoluteUrl(`/books/novels/${slug}`)}
+                title={meta.title}
+                text={`${meta.title} — Dancing Salamanders`}
+              />
+            </div>
+            {meta.year && <p className="grimoire-year">{meta.year}</p>}
+```
+
+- [ ] **Step 4: Verify the build succeeds**
+
+Run: `npm run build`
+Expected: Build completes with no errors; `app/books/novels/[slug]/opengraph-image` listed in route output.
+
+- [ ] **Step 5: Manually verify in the browser**
+
+Run: `npm run dev`.
+- Open `http://localhost:3000/books/novels/<a real novel slug>` → a share icon appears next to the title on page 1 (it's inside the `currentPage === 1` block, so it won't show on later pages — this matches the existing behavior where the title block itself only renders on page 1).
+- Open `http://localhost:3000/books/novels/<slug>/opengraph-image` → confirm it renders a 1200×630 PNG with the novel title, cover, and "Dancing Salamanders".
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add "app/books/novels/[slug]/opengraph-image.tsx" "app/books/novels/[slug]/page.tsx"
+git commit -m "feat(novels): add social preview image, OG metadata, and share button"
+```
+
+---
+
+### Task 12: Add smoke test script for the new routes
+
+**Files:**
+- Create: `tests/smoke/music-links.mjs`
+
+This follows the existing convention in `tests/smoke/music-http.mjs`: a standalone Node script run manually against a live/deployed server (not part of `npm test`), rather than a Vitest test (there's no running Next server during `vitest run`).
+
+- [ ] **Step 1: Create the script**
+
+```js
+#!/usr/bin/env node
+// [MusicSmoke] Deep-link smoke test.
+// For each of a few real albums (and their first track), requests the
+// album page, the track page, and both opengraph-image routes, checking
+// for HTTP 200 and the expected <title>/og:image content.
+//
+// Usage: node tests/smoke/music-links.mjs [baseUrl]
+//   baseUrl defaults to https://dancingsalamanders.com
+
+const BASE = process.argv[2] || "https://dancingsalamanders.com";
+
+async function checkPage(path, expectedTitleFragment) {
+  const res = await fetch(`${BASE}${path}`);
+  const body = await res.text();
+  const ok = res.status === 200;
+  const hasTitle = body.includes(expectedTitleFragment);
+  const hasOgImage = /property="og:image"/.test(body);
+  console.log(
+    `${ok && hasTitle && hasOgImage ? "PASS" : "FAIL"} ${path} — status=${res.status} title=${hasTitle} og:image=${hasOgImage}`
+  );
+  return ok && hasTitle && hasOgImage;
+}
+
+async function main() {
+  const res = await fetch(`${BASE}/api/music`);
+  if (!res.ok) {
+    console.error(`[FATAL] /api/music returned ${res.status}`);
+    process.exit(2);
+  }
+  const albums = await res.json();
+  if (albums.length === 0) {
+    console.error("[FATAL] no albums returned by /api/music — nothing to test");
+    process.exit(2);
+  }
+
+  const album = albums[0];
+  const track = album.tracks[0];
+
+  const results = await Promise.all([
+    checkPage(`/music/${album.slug}`, album.title),
+    checkPage(`/music/${album.slug}/${track.trackNumber}`, track.title),
+  ]);
+
+  const allPassed = results.every(Boolean);
+  console.log(allPassed ? "\nAll checks passed." : "\nSome checks FAILED.");
+  process.exit(allPassed ? 0 : 1);
+}
+
+main();
+```
+
+- [ ] **Step 2: Run it against a local dev server**
+
+Run: `npm run dev` (in one terminal), then in another: `node tests/smoke/music-links.mjs http://localhost:3000`
+Expected: Both checks print `PASS`, final line `All checks passed.`, exit code 0.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add tests/smoke/music-links.mjs
+git commit -m "test(smoke): add deep-link smoke test for music album/track routes"
+```
+
+---
+
+### Task 13: Full regression pass and manual social-preview verification
+
+**Files:** none (verification only)
+
+- [ ] **Step 1: Run the full automated test suite**
+
+Run: `npm test`
+Expected: All tests pass, including `tests/unit/music.test.ts` and `tests/unit/music-context.test.tsx`.
+
+- [ ] **Step 2: Run a full production build**
+
+Run: `npm run build`
+Expected: Build succeeds with no type errors; route output lists `/music`, `/music/[albumSlug]`, `/music/[albumSlug]/[trackNumber]`, their `opengraph-image` routes, and `/books/novels/[slug]/opengraph-image`.
+
+- [ ] **Step 3: Manual end-to-end pass in the browser**
+
+Run: `npm run dev`. Walk through:
+- `/music` → select album → select track → confirm URL updates at each step and playback continues correctly.
+- Copy a track URL, open it in a new private/incognito window → confirm the track is cued (not playing) and the player bar shows it ready to tap Play.
+- Repeat for a novel page share link.
+
+- [ ] **Step 4: Validate real-world social previews (post-deploy only)**
+
+Once deployed, paste a `/music/<album>`, a `/music/<album>/<track>`, and a `/books/novels/<slug>` URL into:
+- Facebook Sharing Debugger (`https://developers.facebook.com/tools/debug/`)
+- Twitter/X Card Validator
+
+Expected: Each shows the correct title/subtitle, cover art, and "Dancing Salamanders" in the preview. If a stale/missing preview appears, use the debugger's "Scrape Again" option — social platforms cache aggressively and may show an old or blank result until re-scraped.
+
+This step can't be completed until the changes are deployed; note it as an open follow-up if closing out this plan before deploying.
+
+**End of Chunk 2.**
+
