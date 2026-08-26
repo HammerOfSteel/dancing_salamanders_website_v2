@@ -25,7 +25,14 @@ async function coverArtDataUri(coverPath: string): Promise<string | null> {
     // content, not the file extension) — some cover files on disk are
     // mislabeled (e.g. PNG bytes with a ".jpg" extension), which previously
     // caused satori to crash trying to decode them as the extension's format.
-    const pngBuffer = await sharp(bytes).png().toBuffer();
+    // Also downscale to the rendered display size (280x280): some covers are
+    // full-resolution photo JPEGs (e.g. 2000x2000), and re-encoding those
+    // losslessly as PNG at full size produces a multi-MB base64 data URI that
+    // blows past the SVG/XML parser's buffer limit inside satori's renderer.
+    const pngBuffer = await sharp(bytes)
+      .resize(280, 280, { fit: "cover" })
+      .png()
+      .toBuffer();
     return `data:image/png;base64,${pngBuffer.toString("base64")}`;
   } catch {
     return null;

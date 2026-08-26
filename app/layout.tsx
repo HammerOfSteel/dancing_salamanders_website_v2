@@ -20,6 +20,10 @@ const crimsonPro = Crimson_Pro({
 });
 
 export const metadata: Metadata = {
+  // Without this, Next.js resolves relative og:image/twitter:image URLs
+  // against the server's own address (localhost in production), which is
+  // unreachable by Discord/Twitter/etc. crawlers.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.dancingsalamanders.com"),
   title: {
     default: "Dancing Salamanders",
     template: "%s | Dancing Salamanders",
