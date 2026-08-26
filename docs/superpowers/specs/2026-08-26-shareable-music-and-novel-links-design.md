@@ -26,41 +26,43 @@ There is currently no way to share a direct link to a specific album, a specific
 
 ### Routing
 
-- `app/music/page.tsx` — becomes a server component. Calls `getAlbums()` from [lib/music.ts](../../../lib/music.ts) directly and renders a client component with the full album list, no album selected.
-- `app/music/[albumSlug]/page.tsx` — new. `generateStaticParams()` from `getAlbums()`; `generateMetadata()` returns the album title; calls `getAlbumBySlug(slug)`, `notFound()` if missing. Renders the same client component with a `selectedAlbum` prop.
-- `app/music/[albumSlug]/[trackNumber]/page.tsx` — new. Same as above, additionally validates `trackNumber` against `album.tracks`; `notFound()` if out of range. `generateMetadata()` returns `"${track.title} — ${album.title}"`. Renders the client component with `selectedAlbum` + `initialTrackNumber`.
+- `app/music/page.tsx` — becomes a server component. Calls `getAlbums()` from [lib/music.ts](../../../lib/music.ts) directly and renders `<MusicPageClient albums={albums} />`.
+- `app/music/[albumSlug]/page.tsx` — new. `generateStaticParams()` from `getAlbums()`; calls `getAlbumBySlug(slug)`, `notFound()` if missing. `generateMetadata()` returns `{ title: album.title, description: "An album by Dancing Salamanders", openGraph: { title: album.title, type: "music.album" } }` (the `og:image` itself comes from the sibling `opengraph-image.tsx`, not from this object). Renders `<MusicPageClient albums={albums} selectedAlbum={album} />`.
+- `app/music/[albumSlug]/[trackNumber]/page.tsx` — new. Same as above. The `trackNumber` route param is matched against each track's `Track.trackNumber` field (not its array index — track numbers already start at 1 and may have gaps, per the parsing logic in `lib/music.ts`); `notFound()` if no track has a matching `trackNumber`. `generateMetadata()` returns `{ title: "${track.title} — ${album.title}", description: "An album by Dancing Salamanders", openGraph: { title: track.title, type: "music.song" } }`. Renders `<MusicPageClient albums={albums} selectedAlbum={album} initialTrackIndex={album.tracks.findIndex(t => t.trackNumber === urlTrackNumber)} />` — the array index is computed here, server-side, once; nothing downstream ever has to reconcile track numbers vs. array indices again.
 - The existing `/api/music` route is left in place but is no longer used by the page itself.
 - `app/books/novels/[slug]/page.tsx` is unchanged structurally (already has `generateStaticParams`/`generateMetadata`); only gets metadata/OG additions (see below).
 
+**New client component:** `components/music/MusicPageClient.tsx` (replaces the current inline logic in `app/music/page.tsx`). Props: `{ albums: Album[]; selectedAlbum?: Album; initialTrackIndex?: number }`. Holds the existing `selected` state (initialized from `selectedAlbum` instead of `null`), renders `PageHero` + `AlbumDetail` + the album grid exactly as today, and owns the `router.push` calls and the mount-time `cueTrack` effect described below.
+
 ### Player state hydration & cueing
 
-- New context action in [lib/music-context.tsx](../../../lib/music-context.tsx): `cueTrack(album, trackIndex)` — mirrors `playTrack` (sets `audio.src`, calls `audio.load()`, updates `currentAlbum`/`currentTrackIndex`/`duration`, persists to `localStorage`) but never calls `audio.play()`, so `isPlaying` stays `false` and the player bar shows a ready-to-tap Play control.
-- The client music component calls `cueTrack` once on mount if it received `initialTrackNumber` (or `trackIndex 0` if only `selectedAlbum` was provided), but only when nothing is already actively playing — it never interrupts existing playback from in-app navigation.
+- New context action, added to the `PlayerActions` interface and provider in [lib/music-context.tsx](../../../lib/music-context.tsx) (does not exist today — this is net-new): `cueTrack(album: Album, trackIndex: number)` — mirrors `playTrack` (sets `audio.src`, calls `audio.load()`, updates `currentAlbum`/`currentTrackIndex`/`duration`, persists to `localStorage` under the existing `ds_player_last` key) but never calls `audio.play()`, so `isPlaying` stays `false` and the player bar shows a ready-to-tap Play control. `trackIndex` here is the array index into `album.tracks`, consistent with the other existing actions like `playTrack` — it is always an array index everywhere in this feature, never a raw `Track.trackNumber` value (see Routing above for where the URL's track number is converted).
+- `MusicPageClient` calls `cueTrack(selectedAlbum, initialTrackIndex ?? 0)` once on mount, in a `useEffect` guarded by a `useRef` so it never re-fires on re-render, only when `selectedAlbum` is defined (skipped entirely on the base `/music` route) and `currentAlbum?.slug !== selectedAlbum.slug` (i.e. nothing from this album is already loaded/playing) — it never interrupts existing playback carried over from in-app navigation.
 - User interactions keep the URL in sync via `router.push`:
   - Selecting an album → `/music/${album.slug}`.
-  - Selecting a track → `/music/${album.slug}/${track.trackNumber}` + a real `playTrack` call (direct user gesture, so autoplay is allowed here).
+  - Selecting a track → `/music/${album.slug}/${track.trackNumber}` + a real `playTrack(album, index)` call (direct user gesture, so autoplay is allowed here).
   - Deselecting an album → `/music`.
 - Back/forward browser buttons work naturally since each state is a real route.
 
 ### Social preview image generation
 
 - Uses Next's `opengraph-image` file convention (`next/og`'s `ImageResponse`), which auto-injects `og:image`/`twitter:image` meta tags.
-- Shared layout component (e.g. `lib/og-image.tsx`) renders: top text → cover image (center) → "Dancing Salamanders" (bottom) on a branded background, reused by all three image routes below.
-- `app/music/[albumSlug]/opengraph-image.tsx` — top text: album title.
-- `app/music/[albumSlug]/[trackNumber]/opengraph-image.tsx` — top text: track title, with album title as smaller text underneath.
-- `app/books/novels/[slug]/opengraph-image.tsx` — top text: novel title, using `novel.meta.coverImage`.
-- Cover art is read from the local filesystem (`fs.readFileSync` + base64), no network fetch needed.
-- Standard 1200×630 OG size. If no cover art exists, renders text-only on the branded background.
+- Shared helper `lib/og-image.tsx` exports `renderPreviewCard({ topText, subText, coverPath }: { topText: string; subText?: string; coverPath?: string }): ImageResponse`. It resolves `coverPath` (a `public/`-relative path like `/music/01_ordain/cover.jpg`) to an absolute filesystem path, reads it via `fs.readFileSync` + base64-encodes it to a data URI (skipped entirely if `coverPath` is undefined or the file doesn't exist), and returns a 1200×630 `ImageResponse` laid out as: `topText` (large, top) → `subText` if provided (smaller, directly under `topText`) → cover image (center, or nothing if unavailable) → "Dancing Salamanders" (bottom), on the site's dark brand background color (from `globals.css`), all in a default system sans-serif font.
+- `app/music/[albumSlug]/opengraph-image.tsx` — calls `renderPreviewCard({ topText: album.title, coverPath: album.coverArt })`.
+- `app/music/[albumSlug]/[trackNumber]/opengraph-image.tsx` — calls `renderPreviewCard({ topText: track.title, subText: album.title, coverPath: album.coverArt })`.
+- `app/books/novels/[slug]/opengraph-image.tsx` — calls `renderPreviewCard({ topText: novel.meta.title, coverPath: novel.meta.coverImage })`.
+- Standard 1200×630 OG size, exported `size`/`contentType` per the Next convention.
 
 ### Share buttons
 
-- New `components/shared/ShareButton.tsx`: icon-only button (lucide-react share icon) taking a `url` and optional `title`/`text`. Uses `navigator.share()` if available, falls back to `navigator.clipboard.writeText(url)` with a brief "Link copied" indicator.
-- Placed on the album header and per-track rows in `AlbumDetail` (track buttons appear on hover, matching the existing Play-icon interaction), and in the novel page header.
+- New `components/shared/ShareButton.tsx`: icon-only button (lucide-react `Share2` icon, same size/style as the existing icon buttons in `AlbumDetail`) taking props `{ url: string; title?: string; text?: string }`, where `url` is always passed in by the caller as a full absolute URL, e.g. `` url={`${process.env.NEXT_PUBLIC_SITE_URL}/music/${album.slug}`} ``. Uses `navigator.share({ title, text, url })` if available. Falls back to `navigator.clipboard.writeText(url)`, on success swapping the `Share2` icon for a `Check` icon (lucide-react) for 2 seconds (via local `useState` + `setTimeout`) as the "copied" confirmation, then reverting — no separate tooltip element needed. Reuses the existing `Button` component from `components/ui/button.tsx` with `variant="ghost"`, `size="icon"`.
+- In `AlbumDetail`, one `ShareButton` is added next to the album title in the header (shares `/music/${album.slug}`). A second `ShareButton` is added inside each track `<li>`, positioned after the track title, sharing `/music/${album.slug}/${track.trackNumber}`. It follows the same visibility rule as the existing Play icon on inactive rows: hidden by default, shown on row hover (and always visible for the currently-active track, matching how the Pause/equalizer icon is always visible there).
+- In `app/books/novels/[slug]/page.tsx`, one `ShareButton` is added next to the novel title in the `grimoire-title-block`, sharing `/books/novels/${slug}`.
 
 ### Novels/audiobooks
 
-- `generateMetadata` in `app/books/novels/[slug]/page.tsx` gains `openGraph: { title: novel.meta.title, description: novel.meta.excerpt }` (image supplied automatically by the sibling `opengraph-image.tsx`).
-- A `ShareButton` is added near the novel title.
+- `generateMetadata` in `app/books/novels/[slug]/page.tsx` currently returns only top-level `title`/`description` (used for the `<title>` tag and generic description meta tag). This is left as-is; an `openGraph: { title: novel.meta.title, description: novel.meta.excerpt }` object is added alongside it in the same returned object (OG tags are independent of the top-level fields, so this is additive, not a restructure). The `og:image` tag itself comes automatically from the sibling `opengraph-image.tsx` — no manual `images` field needed.
+- A `ShareButton` is added near the novel title (see Share Buttons section above).
 - No changes to audiobook playback, reading-position resume, or routing.
 
 ## Error Handling
@@ -71,6 +73,6 @@ There is currently no way to share a direct link to a specific album, a specific
 
 ## Testing
 
-- Unit tests (Vitest, `tests/unit/`): track-number validation in the new dynamic route; `cueTrack` context action asserts `isPlaying` stays `false` and state updates correctly.
-- Smoke test (`tests/smoke/`): `/music/[album]` and `/music/[album]/[track]` return 200 with expected `<title>` and `og:image` present in the HTML.
+- `tests/unit/music.test.ts` (existing file) gains cases for: `Track.trackNumber` → array-index resolution used by the `[trackNumber]` route (matching number found / not found), and the new `cueTrack` context action asserting `isPlaying` stays `false` while `currentAlbum`/`currentTrackIndex` update correctly.
+- New `tests/smoke/music-links.test.ts`: requests `/music/[a real album slug]` and `/music/[album]/[a real track number]` (using `getAlbums()` to pick a real fixture rather than hardcoding), asserts HTTP 200 and that the response HTML contains the expected `<title>` and an `og:image` meta tag.
 - Manual post-implementation check: validate real-world preview rendering via Facebook's Sharing Debugger and/or Twitter Card Validator (crawlers cache aggressively, so this is the only reliable way to confirm actual results).
