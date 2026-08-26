@@ -36,6 +36,7 @@ interface PlayerState {
 interface PlayerActions {
   playAlbum: (album: Album, trackIndex?: number) => void;
   playTrack: (album: Album, trackIndex: number) => void;
+  cueTrack: (album: Album, trackIndex: number) => void;
   pause: () => void;
   resume: () => void;
   togglePlay: () => void;
@@ -59,6 +60,14 @@ const LAST_PLAYED_KEY = "ds_player_last";
 export function MusicPlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Create eagerly during render (not in an effect) so descendants' mount
+  // effects (which may run before this provider's effect) never see a null audioRef.
+  if (typeof window !== "undefined" && !audioRef.current) {
+    const audio = new Audio();
+    audio.preload = "metadata";
+    audioRef.current = audio;
+  }
+
   const [currentAlbum, setCurrentAlbum] = useState<Album | null>(null);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -67,11 +76,10 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(0.8);
 
-  // Initialise audio element once
+  // Wire up listeners on the already-created audio element
   useEffect(() => {
-    const audio = new Audio();
-    audio.preload = "metadata";
-    audioRef.current = audio;
+    const audio = audioRef.current;
+    if (!audio) return;
 
     // Restore volume
     const savedVol = localStorage.getItem(VOLUME_KEY);
@@ -151,6 +159,24 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     [loadAndPlay]
   );
 
+  const cueTrack = useCallback((album: Album, trackIndex: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const track = album.tracks[trackIndex];
+    if (!track) return;
+
+    audio.src = track.src;
+    audio.load();
+
+    setCurrentAlbum(album);
+    setCurrentTrackIndex(trackIndex);
+
+    localStorage.setItem(
+      LAST_PLAYED_KEY,
+      JSON.stringify({ albumSlug: album.slug, trackIndex })
+    );
+  }, []);
+
   const pause = useCallback(() => audioRef.current?.pause(), []);
 
   const resume = useCallback(() => audioRef.current?.play().catch(() => {}), []);
@@ -203,6 +229,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     volume,
     playAlbum,
     playTrack,
+    cueTrack,
     pause,
     resume,
     togglePlay,

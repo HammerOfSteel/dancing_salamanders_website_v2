@@ -74,7 +74,7 @@ vi.mock("fs", async () => {
 vi.spyOn(process, "cwd").mockReturnValue("/mock/cwd");
 
 // ── Import AFTER mocks are set up ──────────────────────────────────────────
-import { getAlbums } from "../../lib/music";
+import { getAlbums, findTrackIndexByNumber } from "../../lib/music";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -153,5 +153,25 @@ describe("[MusicLib] getAlbums() URL generation", () => {
     expect(daff!.tracks[0].src).toBe(
       "/music/Daffodil/daffodil/01 - Dancing salamanders - Tŷ Bach Twt.mp3"
     );
+  });
+});
+
+describe("[MusicLib] findTrackIndexByNumber()", () => {
+  // NOTE: the fs mock above does not intercept lib/music.ts's fs calls in this
+  // Vitest version (pre-existing issue, see other failing tests in this file),
+  // so getAlbums() here reads the real public/music directory. Using the real
+  // "glitch_witch" album (public/music/09_glitch_witch), which has 12 tracks.
+  it("returns the array index of the track with the matching trackNumber", () => {
+    const albums = getAlbums();
+    const gw = albums.find((a) => a.slug === "glitch_witch")!;
+    expect(findTrackIndexByNumber(gw, 1)).toBe(0);
+    expect(findTrackIndexByNumber(gw, 2)).toBe(1);
+  });
+
+  it("returns -1 when no track has that trackNumber", () => {
+    const albums = getAlbums();
+    const gw = albums.find((a) => a.slug === "glitch_witch")!;
+    expect(findTrackIndexByNumber(gw, 99)).toBe(-1);
+    expect(findTrackIndexByNumber(gw, 0)).toBe(-1);
   });
 });
