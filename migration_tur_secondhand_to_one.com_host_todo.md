@@ -163,12 +163,13 @@ completing without error).
       for the 3 ready domains only:
       `sudo certbot --nginx -d tur.dancingsalamanders.com -d tur2.dancingsalamanders.com -d tur3.dancingsalamanders.com`
       → succeeded, certbot deployed the cert into all 3 vhost files automatically.
-- [ ] **Still pending, blocked on the user fixing tur4's DNS A-record** to `85.190.107.67`.
-      Once that resolves, run:
+- [x] User fixed `tur4`'s DNS A-record. DNS was mid-propagation (some resolvers returned the
+      new IP, others still cached the old Kamatera IP) when checked, but the HTTP-01 challenge
+      succeeded anyway. Ran:
       `sudo certbot --nginx --cert-name tur.dancingsalamanders.com -d tur.dancingsalamanders.com -d tur2.dancingsalamanders.com -d tur3.dancingsalamanders.com -d tur4.dancingsalamanders.com --expand`
-      then `nginx -t` + reload and smoke-test `https://tur4.dancingsalamanders.com/`.
-      (tur4's app is already fully deployed and working on the new host at port 3024/3025 —
-      only the public DNS + TLS cert are outstanding for it.)
+      → renewed the cert to cover all 4 domains, deployed into all 4 vhost files automatically.
+      Verified via `curl --resolve tur4.dancingsalamanders.com:443:85.190.107.67 https://tur4.dancingsalamanders.com/`
+      (bypassing any locally-cached stale DNS) → 200, wp-admin 302, 12 products via Store API.
 
 ## Phase 6 — Smoke test (3 of 4 live domains; tur4 pending DNS)
 
@@ -181,9 +182,9 @@ completing without error).
       API backend confirmed reachable and returning the full 12-product catalog at
       `/wp-json/wc/store/v1/products?per_page=100`, `/wp-admin/` on the same domain also
       reachable via the regex location block (302).
-- [ ] `tur4.dancingsalamanders.com`: app fully deployed and internally verified working
-      (port 3024/3025), but public HTTPS smoke test blocked until DNS points here — currently
-      still resolves to the old Kamatera box, which is still serving it correctly there.
+- [x] `tur4.dancingsalamanders.com`: HTTPS 200 (verified with `--resolve` against
+      `85.190.107.67` directly, since DNS was still propagating at check time), wp-admin
+      reachable (302), Store API returns the full 12-product catalog.
 - [ ] One full cart → checkout → order-confirmation walkthrough — not yet done on either a
       WordPress or React demo (recommended before calling this fully signed off, though the
       mocked payment gateway config was confirmed present in the seed logs for all 4 stacks).
@@ -191,14 +192,12 @@ completing without error).
 ## Phase 7 — Cleanup / decommission notes
 
 - [x] Left the Kamatera copy (`/opt/tur-secondhand`, containers, nginx configs) completely
-      untouched and running — nothing stopped/removed there. `tur4.dancingsalamanders.com`
-      is in fact still being served live from Kamatera right now (confirmed via curl, since its
-      DNS hasn't moved), so Kamatera's stack still needs to stay up until the user fixes tur4's
-      DNS and the `--expand` cert step + final smoke test above are done.
-- [ ] Once tur4's DNS is fixed and its cert/smoke-test are done, this task is fully complete —
-      Kamatera's tur-secondhand containers then join the same Phase 7 ("Decommission
+      untouched and running — nothing stopped/removed there.
+- [x] All 4 domains (tur/tur2/tur3/tur4) are now fully live on the new host with valid TLS.
+      Kamatera's tur-secondhand containers now join the same Phase 7 ("Decommission
       Kamatera") already tracked in
-      [migration_to_one.com_host_todo.md](migration_to_one.com_host_todo.md), and **that phase
-      can finally proceed for the whole box**, not just the main site.
-- [ ] Update `/memories/repo/kamatera-deployment.md` with the new host's tur-secondhand port
-      layout, deploy-key name, and the WooCommerce/WP-core-auto-update gotcha — pending.
+      [migration_to_one.com_host_todo.md](migration_to_one.com_host_todo.md) — **that phase can
+      now proceed for the whole box**, not just the main site (still recommend a short grace
+      period + a manual cart→checkout walkthrough on the new host before fully decommissioning).
+- [x] Updated `/memories/repo/kamatera-deployment.md` with the new host's tur-secondhand port
+      layout, deploy-key name, and the WooCommerce/WP-core-auto-update + CI-race gotchas.
