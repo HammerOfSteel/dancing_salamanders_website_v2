@@ -10,8 +10,9 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Points at the live visualizer subdomain
-        NEXT_PUBLIC_VISUALIZER_URL: https://music.dancingsalamanders.com
+        # Points at the live visualizer subdomain; override per-environment
+        # (e.g. dev deploys set NEXT_PUBLIC_VISUALIZER_URL=https://musicdev.dancingsalamanders.com)
+        NEXT_PUBLIC_VISUALIZER_URL: ${NEXT_PUBLIC_VISUALIZER_URL:-https://music.dancingsalamanders.com}
     expose:
       - "3000"
     env_file:
@@ -26,7 +27,8 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "127.0.0.1:3007:80"
+      # 3007 = prod, override with NGINX_PORT for other environments (e.g. dev uses 3008)
+      - "127.0.0.1:${NGINX_PORT:-3007}:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:

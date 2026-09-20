@@ -1,0 +1,87 @@
+name: Deploy Website to Dev
+
+# Manual only — never triggers on push, so a bad dev build can never touch prod.
+on:
+  workflow_dispatch:
+
+# Required GitHub Secrets:
+#   DEV_DEPLOY_HOST     — one.com VPS IP
+#   DEV_DEPLOY_USER     — administrator
+#   DEV_DEPLOY_SSH_KEY  — private key for the deploy user
+#
+# This host also runs livslusths.se (separate project, /opt/livlust) and the
+# prod copy of this site — this workflow only ever touches
+# /opt/dancing-salamanders-dev and its own nginx site.
+#
+# Note: .env.production must already exist at
+# /opt/dancing-salamanders-dev/.env.production (created once manually on the
+# server — never committed to git).
+# The dev visualizer (musicdev.dancingsalamanders.com) is deployed
+# independently from the music_visualizer_dancing_salamanders repo's own
+# deploy-dev.yml — no need to redeploy it here.
+
+jobs:
+  deploy:
+    name: SSH Deploy (dev)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEV_DEPLOY_HOST }}
+          username: ${{ secrets.DEV_DEPLOY_USER }}
+          key: ${{ secrets.DEV_DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+
+            REPO_URL="https://github.com/HammerOfSteel/dancing_salamanders_website_v2.git"
+            DEPLOY_DIR="/opt/dancing-salamanders-dev"
+            DOMAIN="dev.dancingsalamanders.com"
+            NGINX_SITE="/etc/nginx/sites-available/${DOMAIN}"
+            NGINX_ENABLED="/etc/nginx/sites-enabled/${DOMAIN}"
+
+            # ── 1. Clone or pull latest code ────────────────────────────
+            if [ ! -d "${DEPLOY_DIR}/.git" ]; then
+              sudo git clone "${REPO_URL}" "${DEPLOY_DIR}"
+            else
+              cd "${DEPLOY_DIR}"
+              sudo git fetch origin main
+              sudo git reset --hard origin/main
+            fi
+
+            cd "${DEPLOY_DIR}"
+
+            # ── 2. Ensure production .env exists ────────────────────────
+            if [ ! -f "${DEPLOY_DIR}/.env.production" ]; then
+              echo "ERROR: ${DEPLOY_DIR}/.env.production not found."
+              echo "Create it manually on the server before deploying."
+              exit 1
+            fi
+
+            # ── 3. Rebuild app image and restart containers ──────────────
+            export NEXT_PUBLIC_VISUALIZER_URL="https://musicdev.dancingsalamanders.com"
+            export NGINX_PORT="3008"
+            sudo -E docker compose -f docker-compose.prod.yml build app
+            sudo -E docker compose -f docker-compose.prod.yml up -d
+
+            # ── 4. Install nginx site config (first deploy only) ─────────
+            if [ ! -f "${NGINX_SITE}" ]; then
+              sudo cp "${DEPLOY_DIR}/deploy/nginx-dev.conf" "${NGINX_SITE}"
+              sudo ln -sf "${NGINX_SITE}" "${NGINX_ENABLED}"
+              sudo nginx -t
+              sudo systemctl reload nginx
+              echo "Nginx site installed."
+            fi
+
+            # ── 5. Obtain TLS certificate (once per domain) ───────────────
+            if [ ! -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
+              sudo certbot --nginx -d "${DOMAIN}" --non-interactive --agree-tos --email "info@dancingsalamanders.com"
+              echo "Certificate obtained for ${DOMAIN}."
+            fi
+
+            # ── 6. Clean up dangling images and stale build cache ─────────
+            sudo docker image prune -f
+            sudo docker builder prune -f --filter "until=24h"
+
+            echo "Deployment complete: https://${DOMAIN}"
