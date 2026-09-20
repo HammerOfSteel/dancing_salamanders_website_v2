@@ -60,10 +60,10 @@ jobs:
             fi
 
             # ── 3. Rebuild app image and restart containers ──────────────
-            export NEXT_PUBLIC_VISUALIZER_URL="https://musicdev.dancingsalamanders.com"
-            export NGINX_PORT="3008"
-            sudo -E docker compose -f docker-compose.prod.yml build app
-            sudo -E docker compose -f docker-compose.prod.yml up -d
+            # `sudo env VAR=val cmd` (not `export` + `sudo -E`) — sudoers on
+            # this host doesn't preserve arbitrary env vars via -E.
+            sudo env NEXT_PUBLIC_VISUALIZER_URL="https://musicdev.dancingsalamanders.com" NGINX_PORT="3008" docker compose -f docker-compose.prod.yml build app
+            sudo env NEXT_PUBLIC_VISUALIZER_URL="https://musicdev.dancingsalamanders.com" NGINX_PORT="3008" docker compose -f docker-compose.prod.yml up -d
 
             # ── 4. Install nginx site config (first deploy only) ─────────
             if [ ! -f "${NGINX_SITE}" ]; then
