@@ -9,11 +9,19 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      // Audio tracks are append-only (new songs always get new filenames), safe to cache forever.
       {
-        source: "/music/:path*",
+        source: "/music/:path*.(mp3|flac|wav|ogg|m4a)",
         headers: [
           { key: "Accept-Ranges", value: "bytes" },
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      // Cover art is edited in place under the same filename, so it must revalidate.
+      {
+        source: "/music/:path*.(jpg|jpeg|png|webp)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400" },
         ],
       },
       {
