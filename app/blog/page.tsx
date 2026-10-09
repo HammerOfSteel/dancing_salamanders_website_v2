@@ -4,7 +4,7 @@ import { BlogCard } from "@/components/blog/BlogCard";
 import { CategoryCard } from "@/components/blog/CategoryCard";
 import { FadeInView } from "@/components/shared/FadeInView";
 import { Badge } from "@/components/ui/badge";
-import { getAllPosts, getAllTags, BLOG_CATEGORIES, type BlogCategory } from "@/lib/blog";
+import { getAllPosts, BLOG_CATEGORIES, type BlogCategory } from "@/lib/blog";
 
 export const metadata = {
   title: "Blog",
@@ -18,12 +18,13 @@ export default function BlogPage({
 }) {
   const { tag, category } = use(searchParams);
   const allPosts = getAllPosts();
-  const tags = getAllTags();
   const activeCategory = BLOG_CATEGORIES.find((c) => c.id === category);
 
-  const posts = allPosts
-    .filter((p) => !tag || p.tags?.includes(tag))
-    .filter((p) => !activeCategory || p.category === (activeCategory.id as BlogCategory));
+  const categoryPosts = activeCategory
+    ? allPosts.filter((p) => p.category === (activeCategory.id as BlogCategory))
+    : [];
+  const tags = Array.from(new Set(categoryPosts.flatMap((p) => p.tags ?? []))).sort();
+  const posts = categoryPosts.filter((p) => !tag || p.tags?.includes(tag));
 
   const tagHref = (t?: string) => {
     const params = new URLSearchParams();
@@ -61,8 +62,8 @@ export default function BlogPage({
           </div>
         )}
 
-        {/* Tag filter */}
-        {tags.length > 0 && (
+        {/* Tag filter, only shown once a category is picked */}
+        {activeCategory && tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-10">
             <Link href={tagHref()}>
               <Badge
@@ -85,8 +86,12 @@ export default function BlogPage({
           </div>
         )}
 
-        {/* Post grid */}
-        {posts.length === 0 ? (
+        {/* Post grid, only shown once a category is picked */}
+        {!activeCategory ? (
+          <p className="text-muted-foreground text-center py-20">
+            Choose a category above to browse its posts.
+          </p>
+        ) : posts.length === 0 ? (
           <p className="text-muted-foreground text-center py-20">No posts yet.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
