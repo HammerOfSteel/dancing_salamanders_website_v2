@@ -2,15 +2,47 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 
+export type BlogCategory = "daffodil" | "suicide" | "bereavement";
+
 export interface PostFrontmatter {
   title: string;
   date: string;
   excerpt: string;
   tags?: string[];
+  category?: BlogCategory;
   featured?: boolean;
   coverImage?: string;
   svContentPath?: string; // relative path from content/blog/ to a Swedish .md source
 }
+
+export interface BlogCategoryMeta {
+  id: BlogCategory;
+  title: string;
+  tagline: string;
+  image: string;
+}
+
+// Fixed set of story categories shown as browse cards on the blog overview page
+export const BLOG_CATEGORIES: BlogCategoryMeta[] = [
+  {
+    id: "daffodil",
+    title: "Daffodil",
+    tagline: "About us, about home",
+    image: "/images/blog/daffodil.jpg",
+  },
+  {
+    id: "suicide",
+    title: "Suicide",
+    tagline: "Grief, guilt and the long road through suicide loss",
+    image: "/images/blog/suicide.jpg",
+  },
+  {
+    id: "bereavement",
+    title: "Bereavement",
+    tagline: "Support, community and the people who stay",
+    image: "/images/blog/berevement.jpg",
+  },
+];
 
 export interface Post extends PostFrontmatter {
   slug: string;
@@ -82,6 +114,10 @@ export function getFeaturedPost(): Post | null {
 
 export function getPostsByTag(tag: string): Post[] {
   return getAllPosts().filter((p) => p.tags?.includes(tag));
+}
+
+export function getPostsByCategory(category: BlogCategory): Post[] {
+  return getAllPosts().filter((p) => p.category === category);
 }
 
 export function getAllTags(): string[] {
