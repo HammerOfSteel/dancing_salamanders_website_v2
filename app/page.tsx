@@ -31,9 +31,8 @@ export default function HomePage() {
                 <span className="block text-5xl sm:text-6xl lg:text-7xl text-primary">Connection</span>
               </h2>
               <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed mb-10 max-w-md">
-                We know from experience how overwhelming grief can feel, and how important it is to
-                meet people who truly understand. Our friends organisation offers a safe place to
-                share, heal and find a way forward at your own pace, without expectations.
+                Livslusths is a non-profit organisation supporting suicide loss survivors, family
+                members, friends and loved ones who have lost someone to suicide.
               </p>
               <a
                 href="https://www.livslusths.se/"
